@@ -1,7 +1,9 @@
 """
 Image generation API routes.
 """
+
 from fastapi import APIRouter, HTTPException
+
 from app.models.image_generation import ImageGenerationRequest, ImageGenerationResponse
 from app.services.image_generation_service import ImageGenerationService
 
@@ -26,9 +28,12 @@ async def generate_images(request: ImageGenerationRequest):
     """
     try:
         response = image_service.create_generation_job(request)
+
         return response
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create image generation job: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create image generation job: {str(e)}"
+        )
 
 
 @router.get("/job/{job_id}")
