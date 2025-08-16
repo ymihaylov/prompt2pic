@@ -1,0 +1,16 @@
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant API as FastAPI API
+    participant W as Worker/Model
+    participant S as Storage
+
+    U->>F: Input business description, model, image count
+    F->>API: POST request with data
+    API->>W: Start async image generation job
+    W->>API: Store job (processing or finished)
+    API->>S: Upload generated images/prompts
+    alt Images Ready
+        F->>API: Poll or websocket
+        API->>F: Download links (images, zip)
+    end
