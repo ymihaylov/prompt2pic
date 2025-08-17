@@ -2,7 +2,10 @@
 Main FastAPI application factory.
 """
 
+from dotenv import load_dotenv
 from fastapi import FastAPI
+
+load_dotenv()
 
 from app.api.routes import api_router
 

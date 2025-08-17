@@ -2,10 +2,12 @@
 Business logic for image generation.
 """
 
+import os
 import uuid
 from datetime import datetime
 
 from app.models.image_generation import ImageGenerationRequest, ImageGenerationResponse
+from app.services.llm_service import LLMService
 from app.services.prompt_template_service import PromptTemplateService
 
 
@@ -13,8 +15,18 @@ class ImageGenerationService:
     """Service class for handling image generation business logic."""
 
     def __init__(self):
-        """Initialize the image generation service."""
         self.prompt_service = PromptTemplateService()
+
+        # Get OpenAI API key from environment
+        api_key = os.getenv("OPENAI_API_KEY")
+        print(f"Debug: API key found: {'Yes' if api_key else 'No'}")
+
+        if not api_key:
+            print("Warning: OPENAI_API_KEY not set. LLM calls will fail.")
+            self.llm_service = None
+        else:
+            print("OpenAI service initialized successfully")
+            self.llm_service = LLMService(api_key)
 
     def create_generation_job(
             self, request: ImageGenerationRequest
@@ -30,7 +42,7 @@ class ImageGenerationService:
         """
         job_id = str(uuid.uuid4())
 
-        # Get populated prompt from template service
+        # Get populated prompt and call LLM
         try:
             variables = {
                 "business_description": request.prompt,
@@ -41,15 +53,22 @@ class ImageGenerationService:
                 template_name="image_generation", variables=variables
             )
 
-            # For now, just print the populated prompt (later we'll send to LLM)
-            print(f"Generated prompt for job {job_id}:")
-            print("=" * 50)
-            print(populated_prompt)
-            print("=" * 50)
+            # Call LLM with populated prompt
+            if self.llm_service:
+                llm_response = self.llm_service.generate_image_prompts(populated_prompt)
+                print(f"LLM Response for job {job_id}:")
+                print("=" * 50)
+                print(llm_response)
+                print("=" * 50)
+            else:
+                print(f"Generated prompt for job {job_id} (LLM disabled):")
+                print("=" * 50)
+                print(populated_prompt)
+                print("=" * 50)
 
         except Exception as e:
-            print(f"Error generating prompt: {e}")
-            # For now, continue with job creation even if prompt generation fails
+            print(f"Error in prompt generation/LLM call: {e}")
+            # Continue with job creation even if LLM fails
 
         return ImageGenerationResponse(
             job_id=job_id,

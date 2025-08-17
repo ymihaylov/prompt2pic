@@ -40,6 +40,15 @@ GENERAL REQUIREMENTS:
 - Add emotional tone that matches the audience.
 - Avoid text, logos, trademarks.
 
+NEGATIVE PROMPT REQUIREMENTS:
+Analyze the business type and create a comprehensive negative prompt that excludes:
+- Generic quality issues (blurry, low quality, amateur, pixelated)
+- Business-inappropriate elements (analyze what would be wrong for THIS business)
+- Competing brands or conflicting visual elements
+- Technical artifacts (watermarks, text overlays, UI elements)
+- Elements conflicting with target audience or brand personality
+- Safety concerns relevant to the business type
+
 OUTPUT FORMAT:
 Return ONLY valid JSON, no text outside the JSON.
 Follow this structure exactly:
@@ -53,7 +62,7 @@ Follow this structure exactly:
         ...
         { "prompt": "...", "aspect": "1:1" }
     ],
-    "negative_prompt": "text, watermark, logo, trademark, blurry"
+    "negative_prompt": "..."
 }
 
 The "gallery" array should contain prompts for exactly {{gallery_count}} gallery images.

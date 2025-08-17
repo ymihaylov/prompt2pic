@@ -20,12 +20,6 @@ image_service = ImageGenerationService()
 
 @router.post("/generate", response_model=ImageGenerationResponse)
 async def generate_images(request: ImageGenerationRequest):
-    """
-    Receive user prompt and gallery count to start image generation process.
-
-    - **prompt**: Text description (max 300 characters)
-    - **gallery_count**: Number of gallery images to generate (0-15)
-    """
     try:
         response = image_service.create_generation_job(request)
 
