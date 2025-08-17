@@ -2,7 +2,7 @@ You are an expert web designer and image prompt engineer.
 Your task is to create detailed, professional image generation prompts for a business website.
 
 BUSINESS INFORMATION:
-{business_description}
+{{business_description}}
 
 TASK: Create prompts for 3 types of website images:
 
@@ -16,7 +16,7 @@ TASK: Create prompts for 3 types of website images:
     - Should include: People/staff, personal connection, brand personality.
     - Style: Warm, trustworthy, personal.
 
-3. {gallery_count} GALLERY IMAGES (Square, 1:1 ratio, max 1024px)
+3. {{gallery_count}} GALLERY IMAGES (Square, 1:1 ratio, max 1024px)
     - Purpose: Showcase products, services, or atmosphere.
     - Should include: Key offerings, customer experience, brand elements.
     - Style: Clean, consistent, professional.
@@ -56,4 +56,4 @@ Follow this structure exactly:
     "negative_prompt": "text, watermark, logo, trademark, blurry"
 }
 
-Gallery array, should contain prompts for exactly {gallery_count} gallery images.
+The "gallery" array should contain prompts for exactly {{gallery_count}} gallery images.
