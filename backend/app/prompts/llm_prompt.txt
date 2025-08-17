@@ -21,12 +21,14 @@ TASK: Create prompts for 3 types of website images:
     - Should include: Key offerings, customer experience, brand elements.
     - Style: Clean, consistent, professional.
 
-For gallery images, create variety:
-
-- Different products/services
-- Customer interactions
-- Behind-the-scenes
-- Brand elements in context
+For gallery images, create variety by showcasing:
+- Different products/services from various angles
+- Customer interactions and authentic experiences
+- Behind-the-scenes operations and craftsmanship
+- Macro/detail shots highlighting quality and texture
+- Environmental shots showing atmosphere and setting
+- Process documentation (making, preparing, serving)
+- Seasonal or time-specific elements when relevant
 
 GENERAL REQUIREMENTS:
 
@@ -38,16 +40,20 @@ GENERAL REQUIREMENTS:
 - Add emotional tone that matches the audience.
 - Avoid text, logos, trademarks.
 
-OUTPUT FORMAT:  
-Return ONLY valid JSON, no text outside the JSON.  
+OUTPUT FORMAT:
+Return ONLY valid JSON, no text outside the JSON.
 Follow this structure exactly:
 
 {
-"hero": { "prompt": "...", "aspect": "16:9" },
-"about": { "prompt": "...", "aspect": "3:4" },
-"gallery": [
-{ "prompt": "...", "aspect": "1:1" },
-{ "prompt": "...", "aspect": "1:1" }
-],
-"negative_prompt": "text, watermark, logo, trademark, blurry"
+    "hero": { "prompt": "...", "aspect": "16:9" },
+    "about": { "prompt": "...", "aspect": "3:4" },
+    "gallery": [
+        { "prompt": "...", "aspect": "1:1" },
+        { "prompt": "...", "aspect": "1:1" },
+        ...
+        { "prompt": "...", "aspect": "1:1" }
+    ],
+    "negative_prompt": "text, watermark, logo, trademark, blurry"
 }
+
+Gallery array, should contain prompts for exactly {gallery_count} gallery images.
