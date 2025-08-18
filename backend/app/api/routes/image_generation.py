@@ -5,7 +5,7 @@ Image generation API routes.
 from fastapi import APIRouter, HTTPException
 
 from app.models.image_generation import ImageGenerationRequest, ImageGenerationResponse
-from app.services.image_generation_service import ImageGenerationService
+from app.services.workflow_manager import WorkflowManager
 
 # Create router instance
 router = APIRouter(
@@ -15,13 +15,13 @@ router = APIRouter(
 )
 
 # Initialize service
-image_service = ImageGenerationService()
+workflow_manager = WorkflowManager()
 
 
 @router.post("/generate", response_model=ImageGenerationResponse)
 async def generate_images(request: ImageGenerationRequest):
     try:
-        response = image_service.create_generation_job(request)
+        response = workflow_manager.create_generation_job(request)
 
         return response
     except Exception as e:
@@ -38,7 +38,7 @@ async def get_job_status(job_id: str):
     - **job_id**: Unique identifier for the generation job
     """
     try:
-        status = image_service.get_job_status(job_id)
+        status = workflow_manager.get_job_status(job_id)
         return status
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Job not found: {str(e)}")
