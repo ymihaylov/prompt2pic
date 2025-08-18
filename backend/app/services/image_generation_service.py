@@ -12,37 +12,19 @@ from app.services.prompt_template_service import PromptTemplateService
 
 
 class ImageGenerationService:
-    """Service class for handling image generation business logic."""
-
     def __init__(self):
         self.prompt_service = PromptTemplateService()
 
         # Get OpenAI API key from environment
         api_key = os.getenv("OPENAI_API_KEY")
-        print(f"Debug: API key found: {'Yes' if api_key else 'No'}")
 
-        if not api_key:
-            print("Warning: OPENAI_API_KEY not set. LLM calls will fail.")
-            self.llm_service = None
-        else:
-            print("OpenAI service initialized successfully")
-            self.llm_service = LLMService(api_key)
+        self.llm_service = LLMService(api_key)
 
     def create_generation_job(
-            self, request: ImageGenerationRequest
+        self, request: ImageGenerationRequest
     ) -> ImageGenerationResponse:
-        """
-        Create a new image generation job.
-
-        Args:
-            request: Image generation request
-
-        Returns:
-            ImageGenerationResponse: Job creation response
-        """
         job_id = str(uuid.uuid4())
 
-        # Get populated prompt and call LLM
         try:
             variables = {
                 "business_description": request.prompt,
@@ -53,18 +35,11 @@ class ImageGenerationService:
                 template_name="image_generation", variables=variables
             )
 
-            # Call LLM with populated prompt
-            if self.llm_service:
-                llm_response = self.llm_service.generate_image_prompts(populated_prompt)
-                print(f"LLM Response for job {job_id}:")
-                print("=" * 50)
-                print(llm_response)
-                print("=" * 50)
-            else:
-                print(f"Generated prompt for job {job_id} (LLM disabled):")
-                print("=" * 50)
-                print(populated_prompt)
-                print("=" * 50)
+            llm_response = self.llm_service.generate_image_prompts(populated_prompt)
+            print(f"LLM Response for job {job_id}:")
+            print("=" * 50)
+            print(llm_response)
+            print("=" * 50)
 
         except Exception as e:
             print(f"Error in prompt generation/LLM call: {e}")
