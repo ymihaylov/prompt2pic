@@ -4,9 +4,9 @@ Image generation API routes.
 
 from fastapi import APIRouter, HTTPException, Depends
 
-from app.core.dependencies import get_workflow_manager
+from app.core.dependencies import get_image_generation_orchestrator
 from app.models.image_generation import ImageGenerationRequest, ImageGenerationResponse
-from app.services.workflow_manager import WorkflowManager
+from app.services.image_generation_orchestrator import ImageGenerationOrchestrator
 
 # Create router instance
 router = APIRouter(
@@ -19,10 +19,12 @@ router = APIRouter(
 @router.post("/generate/sync", response_model=ImageGenerationResponse)
 async def generate_images_sync(
     request: ImageGenerationRequest,
-    workflow_manager: WorkflowManager = Depends(get_workflow_manager),
+    image_generation_orchestrator: ImageGenerationOrchestrator = Depends(
+        get_image_generation_orchestrator
+    ),
 ):
     try:
-        response = workflow_manager.generate_images(request)
+        response = image_generation_orchestrator.generate_images(request)
 
         return response
     except Exception as e:
@@ -33,7 +35,10 @@ async def generate_images_sync(
 
 @router.get("/job/{job_id}")
 async def get_job_status(
-    job_id: str, workflow_manager: WorkflowManager = Depends(get_workflow_manager)
+    job_id: str,
+    image_generation_orchestrator: ImageGenerationOrchestrator = Depends(
+        get_image_generation_orchestrator
+    ),
 ):
     """
     Get the status of an image generation job.
@@ -41,7 +46,7 @@ async def get_job_status(
     - **job_id**: Unique identifier for the generation job
     """
     try:
-        status = workflow_manager.get_job_status(job_id)
+        status = image_generation_orchestrator.get_job_status(job_id)
         return status
     except Exception as e:
         raise HTTPException(status_code=404, detail=f"Job not found: {str(e)}")

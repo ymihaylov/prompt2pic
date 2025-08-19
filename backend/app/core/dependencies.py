@@ -4,9 +4,10 @@ from fastapi import Depends
 
 from app.core.factories import LLMProviderFactory, ImageProviderFactory
 from app.core.prompt_config import ProviderConfig
-from app.services.prompt_template_service import PromptTemplateService
 from app.services.file_manager_service import FileManagerService
-from app.services.workflow_manager import WorkflowManager
+from app.services.image_generation_orchestrator import ImageGenerationOrchestrator
+from app.services.image_generator_service import ImageGeneratorService
+from app.services.prompt_template_service import PromptTemplateService
 
 
 @lru_cache()
@@ -35,16 +36,22 @@ def get_file_manager() -> FileManagerService:
     return FileManagerService()
 
 
-def get_workflow_manager(
+def get_image_generator() -> ImageGeneratorService:
+    """Create image generator service instance."""
+    return ImageGeneratorService()
+
+
+def get_image_generation_orchestrator(
     prompt_service: PromptTemplateService = Depends(get_prompt_template_service),
     llm_factory: LLMProviderFactory = Depends(get_llm_factory),
     image_factory: ImageProviderFactory = Depends(get_image_factory),
     file_manager: FileManagerService = Depends(get_file_manager),
-) -> WorkflowManager:
-    """Create workflow manager with injected dependencies."""
-    return WorkflowManager(
+    image_generator: ImageGeneratorService = Depends(get_image_generator),
+) -> ImageGenerationOrchestrator:
+    return ImageGenerationOrchestrator(
         prompt_service=prompt_service,
         llm_factory=llm_factory,
         image_factory=image_factory,
         file_manager=file_manager,
+        image_generator=image_generator,
     )

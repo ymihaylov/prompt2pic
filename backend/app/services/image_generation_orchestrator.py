@@ -12,18 +12,20 @@ from app.services.image_generator_service import ImageGeneratorService
 from app.services.prompt_template_service import PromptTemplateService
 
 
-class WorkflowManager:
+class ImageGenerationOrchestrator:
     def __init__(
         self,
         prompt_service: PromptTemplateService,
         llm_factory: LLMProviderFactory,
         image_factory: ImageProviderFactory,
         file_manager: FileManagerService,
+        image_generator: ImageGeneratorService,
     ):
         self.prompt_service = prompt_service
         self.llm_factory = llm_factory
         self.image_factory = image_factory
         self.file_manager = file_manager
+        self.image_generator = image_generator
 
     def generate_images(
         self, request: ImageGenerationRequest
@@ -46,8 +48,7 @@ class WorkflowManager:
             print(f"LLM Response: {llm_response}")
 
             # 3. Call image_provider with llm_response. Foreach generated images. Collect responses in array - image_urls.
-            image_generator = ImageGeneratorService(image_provider)
-            image_urls = image_generator.generate_all_images(llm_response)
+            image_urls = self.image_generator.generate_all_images(image_provider, llm_response)
             print(f"Generated image URLs: {image_urls}")
 
             # 4. Download the images somewhere

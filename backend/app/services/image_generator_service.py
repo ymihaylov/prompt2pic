@@ -6,10 +6,7 @@ from app.core.interfaces import ImageProvider
 class ImageGeneratorService:
     """Service responsible for generating multiple images from LLM response."""
 
-    def __init__(self, image_provider: ImageProvider):
-        self.image_provider = image_provider
-
-    def generate_all_images(self, llm_response: Dict[str, Any]) -> List[Dict[str, str]]:
+    def generate_all_images(self, image_provider: ImageProvider, llm_response: Dict[str, Any]) -> List[Dict[str, str]]:
         """Generate all images from LLM response and collect URLs."""
         image_urls = []
 
@@ -17,7 +14,7 @@ class ImageGeneratorService:
         if "hero" in llm_response:
             hero_data = llm_response["hero"]
             print(f"Generating hero image...")
-            hero_url = self.image_provider.generate_image(
+            hero_url = image_provider.generate_image(
                 hero_data["prompt"], hero_data["aspect"]
             )
             image_urls.append({"type": "hero", "url": hero_url, "filename": "hero.png"})
@@ -26,7 +23,7 @@ class ImageGeneratorService:
         if "about" in llm_response:
             about_data = llm_response["about"]
             print(f"Generating about image...")
-            about_url = self.image_provider.generate_image(
+            about_url = image_provider.generate_image(
                 about_data["prompt"], about_data["aspect"]
             )
             image_urls.append(
@@ -37,7 +34,7 @@ class ImageGeneratorService:
         if "gallery" in llm_response:
             for i, gallery_item in enumerate(llm_response["gallery"]):
                 print(f"Generating gallery image {i+1}...")
-                gallery_url = self.image_provider.generate_image(
+                gallery_url = image_provider.generate_image(
                     gallery_item["prompt"], gallery_item["aspect"]
                 )
                 image_urls.append(
