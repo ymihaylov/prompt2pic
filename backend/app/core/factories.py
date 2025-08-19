@@ -6,6 +6,7 @@ from app.core.interfaces import (
     LLMProviderType,
     ImageProviderType,
 )
+from app.services.providers.image_simulation_provider import ImageSimulationProvider
 from app.services.providers.llm_simulation_provider import LLMSimulationProvider
 from app.services.providers.openai_image_provider import OpenAIImageProvider
 from app.services.providers.openai_llm_provider import OpenAILLMProvider
@@ -28,20 +29,14 @@ class LLMProviderFactory:
 
 class ImageProviderFactory:
     @staticmethod
-    def create(provider_type: str = ImageProviderType) -> ImageProvider:
+    def create(
+        provider_type: ImageProviderType = ImageProviderType.SIMULATION,
+    ) -> ImageProvider:
         if provider_type == "openai":
             api_key = os.getenv("OPENAI_API_KEY")
+
             return OpenAIImageProvider(api_key=api_key)
         elif provider_type == ImageProviderType.SIMULATION:
-            return LLMSimulationProvider()
+            return ImageSimulationProvider()
         else:
             raise ValueError(f"Unsupported image provider: {provider_type}")
-
-
-class SimulationProviderFactory:
-    @staticmethod
-    def create(provider_type: str = "mock") -> LLMSimulationProvider:
-        if provider_type == "mock":
-            return MockSimulationProvider()
-        else:
-            raise ValueError(f"Unsupported simulation provider: {provider_type}")

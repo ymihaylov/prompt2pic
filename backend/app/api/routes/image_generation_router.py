@@ -2,9 +2,9 @@
 Image generation API routes.
 """
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
-from app.core.prompt_config import ProviderConfig
+from app.core.dependencies import get_workflow_manager
 from app.models.image_generation import ImageGenerationRequest, ImageGenerationResponse
 from app.services.workflow_manager import WorkflowManager
 
@@ -15,15 +15,14 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-# Initialize service with simulation mode for development
-config = ProviderConfig()
-workflow_manager = WorkflowManager(config)
-
 
 @router.post("/generate/sync", response_model=ImageGenerationResponse)
-async def generate_images(request: ImageGenerationRequest):
+async def generate_images_sync(
+    request: ImageGenerationRequest,
+    workflow_manager: WorkflowManager = Depends(get_workflow_manager),
+):
     try:
-        response = workflow_manager.create_generation_job(request)
+        response = workflow_manager.generate_images(request)
 
         return response
     except Exception as e:
@@ -33,7 +32,9 @@ async def generate_images(request: ImageGenerationRequest):
 
 
 @router.get("/job/{job_id}")
-async def get_job_status(job_id: str):
+async def get_job_status(
+    job_id: str, workflow_manager: WorkflowManager = Depends(get_workflow_manager)
+):
     """
     Get the status of an image generation job.
 

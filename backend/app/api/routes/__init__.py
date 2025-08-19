@@ -4,8 +4,9 @@
 API routes package initialization.
 """
 from fastapi import APIRouter
+
 from .health import router as health_router
-from .image_generation import router as images_router
+from .image_generation_router import router as images_router
 
 # Create main API router
 api_router = APIRouter()
