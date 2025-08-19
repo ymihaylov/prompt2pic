@@ -1,39 +1,8 @@
-"""
-LLM service for OpenAI integration.
-"""
-
-import json
-
-from openai import OpenAI
+from app.core.interfaces import LLMProvider
 
 
-class LLMService:
-    def __init__(self, api_key: str):
-        self.client = OpenAI(api_key=api_key)
-
-    def generate_image_prompts(self, populated_prompt: str) -> dict:
-        return self.simulate_image_prompts(populated_prompt)
-
-        try:
-            response = self.client.chat.completions.create(
-                model="gpt-4o-mini",
-                messages=[{"role": "system", "content": populated_prompt}],
-                temperature=0.7,
-                max_tokens=2000,
-            )
-
-            content = response.choices[0].message.content
-
-            # Parse JSON response
-            result = json.loads(content)
-            return result
-
-        except json.JSONDecodeError as e:
-            raise ValueError(f"LLM returned invalid JSON: {e}")
-        except Exception as e:
-            raise RuntimeError(f"LLM API call failed: {e}")
-
-    def simulate_image_prompts(self, populated_prompt: str) -> dict:
+class LLMSimulationProvider(LLMProvider):
+    def generate_prompts(self, populated_prompt: str) -> dict:
         return {
             "hero": {
                 "prompt": "A vibrant and inviting landscape banner that captures the essence of PawPrint, showcasing a beautiful outdoor pet-friendly environment filled with families and adults enjoying quality time with their pets. The scene features lush greenery in forest green tones, complemented by accents of golden yellow in the sunlit atmosphere. The image conveys a sense of community and joy among pet owners, highlighting the love for animals while ensuring it appeals to the target demographic of adults aged 25-55. Soft natural light bathes the scene, creating an inviting and modern feel.",

@@ -1,5 +1,14 @@
 from dataclasses import dataclass
-from typing import List
+from typing import List, Optional
+
+from app.core.interfaces import LLMProviderType
+
+
+@dataclass
+class ProviderConfig:
+    llm_provider: str = LLMProviderType.SIMULATION
+    image_provider: str = LLMProviderType.SIMULATION
+    api_key: Optional[str] = None
 
 
 @dataclass

@@ -2,6 +2,8 @@ from datetime import datetime
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.core.interfaces import LLMProviderType, ImageProviderType
+
 
 class ImageGenerationRequest(BaseModel):
     """Request model for image generation."""
@@ -11,6 +13,12 @@ class ImageGenerationRequest(BaseModel):
     )
     gallery_count: int = Field(
         0, ge=0, le=15, description="Number of gallery images to generate (0-15)"
+    )
+    llm_model: LLMProviderType = Field(
+        default=LLMProviderType.OPENAI, description="LLM provider choice"
+    )
+    image_model: ImageProviderType = Field(
+        default=ImageProviderType.OPENAI, description="Image provider choice"
     )
 
     @field_validator("prompt")
@@ -27,6 +35,9 @@ class ImageGenerationResponse(BaseModel):
     message: str
     created_at: datetime
     request_data: ImageGenerationRequest
+    # generated_images: Optional[dict] = None
+    # provider_info: Optional[dict] = None
+    # processing_time: Optional[float] = None
 
 
 class JobStatusResponse(BaseModel):

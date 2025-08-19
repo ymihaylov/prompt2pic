@@ -4,6 +4,7 @@ Image generation API routes.
 
 from fastapi import APIRouter, HTTPException
 
+from app.core.prompt_config import ProviderConfig
 from app.models.image_generation import ImageGenerationRequest, ImageGenerationResponse
 from app.services.workflow_manager import WorkflowManager
 
@@ -14,11 +15,12 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-# Initialize service
-workflow_manager = WorkflowManager()
+# Initialize service with simulation mode for development
+config = ProviderConfig()
+workflow_manager = WorkflowManager(config)
 
 
-@router.post("/generate", response_model=ImageGenerationResponse)
+@router.post("/generate/sync", response_model=ImageGenerationResponse)
 async def generate_images(request: ImageGenerationRequest):
     try:
         response = workflow_manager.create_generation_job(request)
