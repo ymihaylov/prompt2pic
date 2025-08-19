@@ -5,13 +5,12 @@ Business logic for image generation.
 import uuid
 from datetime import datetime
 
-from app.core.prompt_config import ProviderConfig
 from app.models.image_generation import ImageGenerationRequest, ImageGenerationResponse
 from app.services.prompt_template_service import PromptTemplateService
 
 
 class WorkflowManager:
-    def __init__(self, config: ProviderConfig = None):
+    def __init__(self):
         self.prompt_service = PromptTemplateService()
 
     def create_generation_job(
