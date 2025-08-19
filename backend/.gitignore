@@ -60,4 +60,5 @@ htmlcov/
 
 # Jupyter Notebook
 .ipynb_checkpoints
-.DS_Store
+generated_images/*
+!generated_images/.gitkeep

@@ -2,6 +2,9 @@
 Image generation API routes.
 """
 
+import time
+import uuid
+
 from fastapi import APIRouter, HTTPException, Depends
 
 from app.core.dependencies import get_image_generation_orchestrator
@@ -24,8 +27,10 @@ async def generate_images_sync(
     ),
 ):
     try:
-        response = image_generation_orchestrator.generate_images(request)
+        # Generate collision-resistant request ID with timestamp prefix
+        request_id = f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
 
+        response = image_generation_orchestrator.generate_images(request, request_id)
         return response
     except Exception as e:
         raise HTTPException(
@@ -40,11 +45,6 @@ async def get_job_status(
         get_image_generation_orchestrator
     ),
 ):
-    """
-    Get the status of an image generation job.
-
-    - **job_id**: Unique identifier for the generation job
-    """
     try:
         status = image_generation_orchestrator.get_job_status(job_id)
         return status

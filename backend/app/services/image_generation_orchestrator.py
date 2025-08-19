@@ -28,7 +28,7 @@ class ImageGenerationOrchestrator:
         self.image_generator = image_generator
 
     def generate_images(
-        self, request: ImageGenerationRequest
+        self, request: ImageGenerationRequest, request_id: str
     ) -> ImageGenerationResponse:
         llm_provider = self.llm_factory.create(request.llm_model)
         image_provider = self.image_factory.create(request.image_model)
@@ -52,18 +52,18 @@ class ImageGenerationOrchestrator:
             print(f"Generated image URLs: {image_urls}")
 
             # 4. Download the images somewhere
-            downloaded_files = self.file_manager.download_images(image_urls)
+            downloaded_files = self.file_manager.download_images(image_urls, request_id)
             print(f"Downloaded files: {downloaded_files}")
 
             # 5. Create zip archive with the images
-            zip_path = self.file_manager.create_zip_archive(downloaded_files)
+            zip_path = self.file_manager.create_zip_archive(downloaded_files, request_id)
             print(f"Created zip archive: {zip_path}")
 
         except Exception as e:
             print(f"Error in prompt generation/image generation: {e}")
 
         return ImageGenerationResponse(
-            job_id=str(uuid.uuid4()),
+            request_id=request_id,
             status="completed",
             message=f"Image generation completed successfully. Generated 1 hero, 1 about-us, and {request.gallery_count} gallery images. Archive: {zip_path if 'zip_path' in locals() else 'N/A'}",
             created_at=datetime.utcnow(),

@@ -30,7 +30,7 @@ class ImageGenerationRequest(BaseModel):
 
 
 class ImageGenerationResponse(BaseModel):
-    job_id: str
+    request_id: str
     status: str
     message: str
     created_at: datetime
@@ -41,7 +41,7 @@ class ImageGenerationResponse(BaseModel):
 
 
 class JobStatusResponse(BaseModel):
-    job_id: str
+    request_id: str
     status: str
     progress: int = Field(ge=0, le=100, description="Progress percentage (0-100)")
     message: str

@@ -1,5 +1,4 @@
 import os
-import uuid
 import zipfile
 from typing import List, Dict
 
@@ -9,21 +8,24 @@ import requests
 class FileManagerService:
     """Service responsible for downloading images and creating archives."""
 
-    def __init__(self, base_dir: str = "temp_images"):
+    def __init__(self, base_dir: str = "generated_images"):
         self.base_dir = base_dir
 
-    def download_images(self, image_urls: List[Dict[str, str]]) -> List[str]:
+    def download_images(
+        self, image_urls: List[Dict[str, str]], request_id: str
+    ) -> List[str]:
         """Download images from URLs to local storage."""
         downloaded_files = []
 
-        # Create temp directory
-        os.makedirs(self.base_dir, exist_ok=True)
+        # Create request-specific directory
+        request_dir = os.path.join(self.base_dir, request_id)
+        os.makedirs(request_dir, exist_ok=True)
 
         for image_data in image_urls:
             try:
                 url = image_data["url"]
                 filename = image_data["filename"]
-                filepath = os.path.join(self.base_dir, filename)
+                filepath = os.path.join(request_dir, filename)
 
                 # Download image
                 response = requests.get(url)
@@ -41,10 +43,10 @@ class FileManagerService:
 
         return downloaded_files
 
-    def create_zip_archive(self, file_paths: List[str]) -> str:
+    def create_zip_archive(self, file_paths: List[str], request_id: str) -> str:
         """Create zip archive from downloaded images."""
-        zip_filename = f"generated_images_{uuid.uuid4().hex[:8]}.zip"
-        zip_path = os.path.join(self.base_dir, zip_filename)
+        zip_filename = f"generated_images_{request_id}.zip"
+        zip_path = os.path.join(self.base_dir, request_id, zip_filename)
 
         with zipfile.ZipFile(zip_path, "w") as zipf:
             for file_path in file_paths:
