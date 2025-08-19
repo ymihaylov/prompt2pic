@@ -8,6 +8,7 @@ from app.services.file_manager_service import FileManagerService
 from app.services.image_generation_orchestrator import ImageGenerationOrchestrator
 from app.services.image_generator_service import ImageGeneratorService
 from app.services.prompt_template_service import PromptTemplateService
+from app.services.request_id_service import RequestIdService
 
 
 @lru_cache()
@@ -39,6 +40,11 @@ def get_file_manager() -> FileManagerService:
 def get_image_generator() -> ImageGeneratorService:
     """Create image generator service instance."""
     return ImageGeneratorService()
+
+
+def get_request_id_service() -> RequestIdService:
+    """Create request ID service instance."""
+    return RequestIdService()
 
 
 def get_image_generation_orchestrator(

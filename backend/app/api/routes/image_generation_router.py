@@ -2,14 +2,12 @@
 Image generation API routes.
 """
 
-import secrets
-import uuid
-
 from fastapi import APIRouter, HTTPException, Depends
 
-from app.core.dependencies import get_image_generation_orchestrator
+from app.core.dependencies import get_image_generation_orchestrator, get_request_id_service
 from app.models.image_generation import ImageGenerationRequest, ImageGenerationResponse
 from app.services.image_generation_orchestrator import ImageGenerationOrchestrator
+from app.services.request_id_service import RequestIdService
 
 # Create router instance
 router = APIRouter(
@@ -25,10 +23,11 @@ async def generate_images_sync(
     image_generation_orchestrator: ImageGenerationOrchestrator = Depends(
         get_image_generation_orchestrator
     ),
+    request_id_service: RequestIdService = Depends(get_request_id_service),
 ):
     try:
-        # Generate cryptographically secure request ID
-        request_id = secrets.token_urlsafe(12)  # 16 chars, secure & URL-safe
+        # Generate secure request ID using injected service
+        request_id = request_id_service.generate_with_prefix("img")
 
         response = image_generation_orchestrator.generate_images(request, request_id)
         return response
