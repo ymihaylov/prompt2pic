@@ -47,16 +47,11 @@ class ImageGenerationOrchestrator:
             llm_response = llm_provider.generate_prompts(populated_prompt)
             print(f"LLM Response: {llm_response}")
 
-            # 3. Call image_provider with llm_response. Foreach generated images. Collect responses in array - image_urls.
-            image_urls = self.image_generator.generate_all_images(image_provider, llm_response)
-            print(f"Generated image URLs: {image_urls}")
+            # 3. Generate and download each image individually
+            self.image_generator.generate_and_download_images(image_provider, llm_response, request_id, self.file_manager)
 
-            # 4. Download the images somewhere
-            downloaded_files = self.file_manager.download_images(image_urls, request_id)
-            print(f"Downloaded files: {downloaded_files}")
-
-            # 5. Create zip archive with the images
-            zip_path = self.file_manager.create_zip_archive(downloaded_files, request_id)
+            # 4. Create zip archive from all downloaded images
+            zip_path = self.file_manager.create_zip_from_directory(request_id)
             print(f"Created zip archive: {zip_path}")
 
         except Exception as e:
