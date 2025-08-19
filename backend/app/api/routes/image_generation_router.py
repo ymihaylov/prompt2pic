@@ -2,7 +2,7 @@
 Image generation API routes.
 """
 
-import time
+import secrets
 import uuid
 
 from fastapi import APIRouter, HTTPException, Depends
@@ -27,8 +27,8 @@ async def generate_images_sync(
     ),
 ):
     try:
-        # Generate collision-resistant request ID with timestamp prefix
-        request_id = f"{int(time.time())}-{uuid.uuid4().hex[:8]}"
+        # Generate cryptographically secure request ID
+        request_id = secrets.token_urlsafe(12)  # 16 chars, secure & URL-safe
 
         response = image_generation_orchestrator.generate_images(request, request_id)
         return response
