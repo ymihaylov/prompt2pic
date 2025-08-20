@@ -11,7 +11,7 @@ from app.services.image_processing_pipeline import ImageProcessingPipeline
 from app.services.job_status_service import JobStatusService
 from app.services.progress_calculator import ProgressCalculator
 from app.services.prompt_template_service import PromptTemplateService
-from app.services.request_id_service import RequestIdService
+from app.services.job_id_service import JobIdService
 
 
 @lru_cache()
@@ -40,13 +40,14 @@ def get_file_manager() -> FileManagerService:
     return FileManagerService()
 
 
-def get_request_id_service() -> RequestIdService:
-    """Create request ID service instance."""
-    return RequestIdService()
+def get_job_id_service() -> JobIdService:
+    """Create job ID service instance."""
+    return JobIdService()
 
 
+@lru_cache()
 def get_job_status_service() -> JobStatusService:
-    """Create job status service instance."""
+    """Get shared job status service instance (singleton)."""
     return JobStatusService()
 
 

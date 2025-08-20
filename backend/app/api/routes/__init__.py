@@ -7,6 +7,7 @@ from fastapi import APIRouter
 
 from .health import router as health_router
 from .image_generation_router import router as images_router
+from .jobs_router import router as jobs_router
 
 # Create main API router
 api_router = APIRouter()
@@ -14,6 +15,7 @@ api_router = APIRouter()
 # Include all route modules
 api_router.include_router(health_router)
 api_router.include_router(images_router)
+api_router.include_router(jobs_router)
 
 # Export for easy import
 __all__ = ["api_router"]

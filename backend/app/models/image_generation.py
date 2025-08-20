@@ -16,10 +16,10 @@ class ImageGenerationRequest(BaseModel):
         0, ge=0, le=15, description="Number of gallery images to generate (0-15)"
     )
     llm_model: LLMProviderType = Field(
-        default=LLMProviderType.OPENAI, description="LLM provider choice"
+        default=LLMProviderType.SIMULATION, description="LLM provider choice"
     )
     image_model: ImageProviderType = Field(
-        default=ImageProviderType.OPENAI, description="Image provider choice"
+        default=ImageProviderType.SIMULATION, description="Image provider choice"
     )
 
     @field_validator("prompt")
@@ -31,14 +31,14 @@ class ImageGenerationRequest(BaseModel):
 
 
 class ImageGenerationResponse(BaseModel):
-    request_status: Dict
+    job_status: Dict
     # generated_images: Optional[dict] = None
     # provider_info: Optional[dict] = None
     # processing_time: Optional[float] = None
 
 
 class JobStatusResponse(BaseModel):
-    request_id: str
+    job_id: str
     status: str
     progress: int = Field(ge=0, le=100, description="Progress percentage (0-100)")
     message: str

@@ -2,6 +2,7 @@
 Business logic for image generation.
 """
 
+import time
 from typing import Dict, Any
 
 from app.core.factories import LLMProviderFactory, ImageProviderFactory
@@ -37,53 +38,52 @@ class ImageGenerationOrchestrator:
         self.image_pipeline = image_pipeline
 
     def generate_images(
-        self, request: ImageGenerationRequest, request_id: str
+        self, request: ImageGenerationRequest, job_id: str
     ) -> ImageGenerationResponse:
 
         try:
             # 1. Initialize
-            self._initialize_job(request_id, request)
+            self._initialize_job(job_id, request)
 
             # 2. Generate enhanced prompts
-            llm_response = self._generate_enhanced_prompts(request, request_id)
+            llm_response = self._generate_enhanced_prompts(request, job_id)
 
             # 3. Process all images
-            self._process_all_images(llm_response, request, request_id)
+            self._process_all_images(llm_response, request, job_id)
 
             # 4. Create final archive
-            zip_path = self._create_final_archive(request_id)
+            zip_path = self._create_final_archive(job_id)
 
             # 5. Complete job
-            self._complete_job(request_id, zip_path)
+            self._complete_job(job_id, zip_path)
 
-            return self._create_response(request, request_id, zip_path)
+            return self._create_response(request, job_id, zip_path)
 
         except Exception as e:
-            self._handle_failure(request_id, e)
+            self._handle_failure(job_id, e)
             raise
 
-    def _initialize_job(self, request_id: str, request: ImageGenerationRequest):
-        self.status_service.create_job(request_id)
+    def _initialize_job(self, job_id: str, request: ImageGenerationRequest):
+        self.status_service.create_job(job_id)
 
         progress = self.progress_calculator.get_stage_progress("prompt_generation")
         self.status_service.update_status(
-            request_id, JobStatus.GENERATING_PROMPT, "Initializing job...", progress
+            job_id, JobStatus.GENERATING_PROMPT, "Initializing job...", progress
         )
 
     def _generate_enhanced_prompts(
-        self, request: ImageGenerationRequest, request_id: str
+        self, request: ImageGenerationRequest, job_id: str
     ) -> Dict[str, Any]:
         """Generate enhanced prompts using LLM"""
 
         progress = self.progress_calculator.get_stage_progress("llm_processing")
         self.status_service.update_status(
-            request_id,
+            job_id,
             JobStatus.GENERATING_PROMPT,
             "Generating enhanced prompts...",
             progress,
         )
 
-        # Generate prompts
         llm_provider = self.llm_factory.create(request.llm_model)
         populated_prompt = self.prompt_service.get_populated_prompt(
             template_name="image_generation",
@@ -92,11 +92,11 @@ class ImageGenerationOrchestrator:
                 "gallery_count": request.gallery_count,
             },
         )
-
+        time.sleep(10)
         llm_response = llm_provider.generate_prompts(populated_prompt)
 
         # Update job with full details
-        self.status_service.fill_images_data(request_id, llm_response)
+        self.status_service.fill_images_data(job_id, llm_response)
 
         return llm_response
 
@@ -104,7 +104,7 @@ class ImageGenerationOrchestrator:
         self,
         llm_response: Dict[str, Any],
         request: ImageGenerationRequest,
-        request_id: str,
+        job_id: str,
     ):
         image_provider = self.image_factory.create(request.image_model)
 
@@ -112,22 +112,23 @@ class ImageGenerationOrchestrator:
 
         progress = self.progress_calculator.get_stage_progress("image_generation")
         self.status_service.update_status(
-            request_id,
+            job_id,
             JobStatus.ABOUT_TO_GENERATE,
             "Starting image generation...",
             progress,
         )
 
         for i, task in enumerate(image_tasks):
+            time.sleep(6)
             self._process_single_image_with_status(
-                task, image_provider, request_id, i, len(image_tasks)
+                task, image_provider, job_id, i, len(image_tasks)
             )
 
     def _process_single_image_with_status(
         self,
         task: ImageTask,
         image_provider: ImageProvider,
-        request_id: str,
+        job_id: str,
         current_index: int,
         total_images: int,
     ):
@@ -136,56 +137,56 @@ class ImageGenerationOrchestrator:
                 current_index, total_images
             )
             self.status_service.update_status(
-                request_id,
+                job_id,
                 self._get_status_for_image_type(task.key),
                 task.message,
                 progress,
             )
-            self.status_service.update_image_generating(request_id, task.key)
+            self.status_service.update_image_generating(job_id, task.key)
 
             # Process the image
             result = self.image_pipeline.process_image_task(
-                task, image_provider, request_id
+                task, image_provider, job_id
             )
 
             # Update status - completed
             self.status_service.update_image_completed(
-                request_id, result["key"], result["url"], result["local_path"]
+                job_id, result["key"], result["url"], result["local_path"]
             )
 
         except Exception as e:
-            self.status_service.update_image_failed(request_id, task.key, str(e))
+            self.status_service.update_image_failed(job_id, task.key, str(e))
             raise
 
-    def _create_final_archive(self, request_id: str) -> str:
+    def _create_final_archive(self, job_id: str) -> str:
         """Create final archive"""
         progress = self.progress_calculator.get_stage_progress("archive_creation")
 
         self.status_service.update_status(
-            request_id, JobStatus.CREATING_ZIP, "Creating archive...", progress
+            job_id, JobStatus.CREATING_ZIP, "Creating archive...", progress
         )
+        time.sleep(6)
+        return self.file_manager.create_zip_from_directory(job_id)
 
-        return self.file_manager.create_zip_from_directory(request_id)
-
-    def _complete_job(self, request_id: str, zip_path: str):
+    def _complete_job(self, job_id: str, zip_path: str):
         """Complete the job"""
-        self.status_service.complete_job(request_id, zip_path)
+        self.status_service.complete_job(job_id, zip_path)
         progress = self.progress_calculator.get_stage_progress("completion")
         self.status_service.update_status(
-            request_id, JobStatus.COMPLETED, "Job completed successfully!", progress
+            job_id, JobStatus.COMPLETED, "Job completed successfully!", progress
         )
 
     def _create_response(
-        self, request: ImageGenerationRequest, request_id: str, zip_path: str
+        self, request: ImageGenerationRequest, job_id: str, zip_path: str
     ) -> ImageGenerationResponse:
         """Create final response"""
         return ImageGenerationResponse(
-            request_status=self.status_service.get_job_dict(request_id),
+            job_status=self.status_service.get_job_dict(job_id),
         )
 
-    def _handle_failure(self, request_id: str, error: Exception):
+    def _handle_failure(self, job_id: str, error: Exception):
         """Handle job failure"""
-        self.status_service.fail_job(request_id, str(error))
+        self.status_service.fail_job(job_id, str(error))
 
     def _get_status_for_image_type(self, image_key: str) -> JobStatus:
         """Get appropriate status enum for image type"""

@@ -55,7 +55,7 @@ class ImageProcessingPipeline:
         return tasks
 
     def process_image_task(
-        self, task: ImageTask, image_provider: ImageProvider, request_id: str
+        self, task: ImageTask, image_provider: ImageProvider, job_id: str
     ) -> Dict[str, Any]:
         """Process a single image task"""
 
@@ -66,7 +66,7 @@ class ImageProcessingPipeline:
 
         # Download image with dynamic extension detection
         local_path, actual_filename = self.file_manager.download_single_image(
-            url, request_id, task.base_filename
+            url, job_id, task.base_filename
         )
 
         return {

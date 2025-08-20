@@ -45,7 +45,7 @@ class ImageInfo:
 
 @dataclass
 class JobInfo:
-    request_id: str
+    job_id: str
     status: JobStatus = JobStatus.INIT
     progress: int = 0
     message: str = ""
@@ -68,18 +68,18 @@ class JobStatusService:
     def __init__(self):
         self._jobs: Dict[str, JobInfo] = {}
 
-    def create_job(self, request_id: str, llm_response: Dict = None) -> JobInfo:
+    def create_job(self, job_id: str, llm_response: Dict = None) -> JobInfo:
         """Create new job with INIT status and setup image placeholders."""
         # TODO: Check if the job with this id already exists and throw exception
         job = JobInfo(
-            request_id=request_id, status=JobStatus.INIT, message="Job created"
+            job_id=job_id, status=JobStatus.INIT, message="Job created"
         )
 
-        self._jobs[request_id] = job
+        self._jobs[job_id] = job
         return job
 
-    def fill_images_data(self, request_id: str, llm_response: Dict[str, ImageInfo]):
-        job = self._jobs[request_id]
+    def fill_images_data(self, job_id: str, llm_response: Dict[str, ImageInfo]):
+        job = self._jobs[job_id]
 
         if not job:
             return False
@@ -91,7 +91,7 @@ class JobStatusService:
                     type="hero",
                     prompt=hero_data.get("prompt"),
                     aspect_ratio=hero_data.get("aspect"),
-                    filename="hero.png",
+                    filename="hero",  # Extension will be set dynamically during download
                 )
 
             if "about" in llm_response:
@@ -100,7 +100,7 @@ class JobStatusService:
                     type="about",
                     prompt=about_data.get("prompt"),
                     aspect_ratio=about_data.get("aspect"),
-                    filename="about.png",
+                    filename="about",  # Extension will be set dynamically during download
                 )
 
             if "gallery" in llm_response:
@@ -110,18 +110,18 @@ class JobStatusService:
                         type=key,
                         prompt=gallery_item.get("prompt"),
                         aspect_ratio=gallery_item.get("aspect"),
-                        filename=f"gallery_{i+1}.png",
+                        filename=f"gallery_{i+1}",  # Extension will be set dynamically during download
                     )
 
     def update_status(
         self,
-        request_id: str,
+        job_id: str,
         status: JobStatus,
         message: str = "",
         progress: int = None,
     ):
         """Update job status."""
-        job = self._jobs.get(request_id)
+        job = self._jobs.get(job_id)
         if not job:
             return False  # TODO: Throw an error
 
@@ -135,9 +135,9 @@ class JobStatusService:
 
         return True
 
-    def update_image_generating(self, request_id: str, image_key: str):
+    def update_image_generating(self, job_id: str, image_key: str):
         """Mark image as generating."""
-        job = self._jobs.get(request_id)
+        job = self._jobs.get(job_id)
 
         if job and image_key in job.images:
             image = job.images[image_key]
@@ -150,9 +150,9 @@ class JobStatusService:
         return False
 
     def update_image_completed(
-        self, request_id: str, image_key: str, url: str, local_path: str
+        self, job_id: str, image_key: str, url: str, local_path: str
     ):
-        job = self._jobs.get(request_id)
+        job = self._jobs.get(job_id)
 
         if job and image_key in job.images:
             image = job.images[image_key]
@@ -161,13 +161,13 @@ class JobStatusService:
             image.local_path = local_path
             image.downloaded_at = datetime.utcnow()
             job.updated_at = datetime.utcnow()
-            print(f"[{request_id}] Image {image_key}: completed - {url}")
+            print(f"[{job_id}] Image {image_key}: completed - {url}")
             return True
 
         return False
 
-    def update_image_failed(self, request_id: str, image_key: str, error: str):
-        job = self._jobs.get(request_id)
+    def update_image_failed(self, job_id: str, image_key: str, error: str):
+        job = self._jobs.get(job_id)
 
         if job and image_key in job.images:
             image = job.images[image_key]
@@ -179,8 +179,8 @@ class JobStatusService:
 
         return False
 
-    def complete_job(self, request_id: str, zip_path: str = None):
-        job = self._jobs.get(request_id)
+    def complete_job(self, job_id: str, zip_path: str = None):
+        job = self._jobs.get(job_id)
 
         if job:
             job.status = JobStatus.COMPLETED
@@ -188,8 +188,8 @@ class JobStatusService:
             job.message = "All images generated and archived"
             job.updated_at = datetime.utcnow()
 
-    def fail_job(self, request_id: str, error: str):
-        job = self._jobs.get(request_id)
+    def fail_job(self, job_id: str, error: str):
+        job = self._jobs.get(job_id)
 
         if job:
             job.status = JobStatus.FAILED
@@ -197,11 +197,11 @@ class JobStatusService:
             job.message = f"Failed: {error}"
             job.updated_at = datetime.utcnow()
 
-    def get_job(self, request_id: str) -> Optional[JobInfo]:
-        return self._jobs.get(request_id)
+    def get_job(self, job_id: str) -> Optional[JobInfo]:
+        return self._jobs.get(job_id)
 
-    def get_job_dict(self, request_id: str) -> Dict:
-        job = self._jobs.get(request_id)
+    def get_job_dict(self, job_id: str) -> Dict:
+        job = self._jobs.get(job_id)
 
         if not job:
             return {"error": "Job not found"}
@@ -220,7 +220,7 @@ class JobStatusService:
 
         # TODO: Should be a type or something?
         return {
-            "request_id": job.request_id,
+            "job_id": job.job_id,
             "status": job.status.value,
             "message": job.message,
             "progress": progress,
@@ -251,9 +251,9 @@ class JobStatusService:
             "error": job.error,
         }
 
-    def get_completed_images(self, request_id: str) -> List[ImageInfo]:
+    def get_completed_images(self, job_id: str) -> List[ImageInfo]:
         """Get all completed images for display."""
-        job = self._jobs.get(request_id)
+        job = self._jobs.get(job_id)
         if not job:
             return []
 
