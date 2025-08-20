@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Dict
 
 from pydantic import BaseModel, Field, field_validator
 
@@ -30,11 +31,7 @@ class ImageGenerationRequest(BaseModel):
 
 
 class ImageGenerationResponse(BaseModel):
-    request_id: str
-    status: str
-    message: str
-    created_at: datetime
-    request_data: ImageGenerationRequest
+    request_status: Dict
     # generated_images: Optional[dict] = None
     # provider_info: Optional[dict] = None
     # processing_time: Optional[float] = None

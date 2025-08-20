@@ -2,7 +2,6 @@
 Business logic for image generation.
 """
 
-from datetime import datetime
 from typing import Dict, Any
 
 from app.core.factories import LLMProviderFactory, ImageProviderFactory
@@ -101,49 +100,6 @@ class ImageGenerationOrchestrator:
 
         return llm_response
 
-    def _process_single_image(
-        self,
-        image_provider,
-        image_data,
-        image_key: str,
-        filename: str,
-        request_id: str,
-        status: JobStatus,
-        message: str,
-        current_progress: int,
-        progress_step: int,
-    ) -> int:
-        """Process a single image: generate and download."""
-        try:
-            # Update status for generation
-            self.status_service.update_status(
-                request_id, status, message, current_progress
-            )
-            self.status_service.update_image_generating(request_id, image_key)
-
-            # 1. Generate image
-            print(f"Generating {image_key} image...")
-            url = self.image_generator.generate_single_image(
-                image_provider, image_data["prompt"], image_data["aspect"]
-            )
-
-            # 2. Download image
-            print(f"Downloading {image_key} image...")
-            local_path = self.file_manager.download_single_image(
-                url, request_id, filename
-            )
-
-            # 3. Update status as completed
-            self.status_service.update_image_completed(
-                request_id, image_key, url, local_path
-            )
-
-        except Exception as e:
-            print(f"Failed to process {image_key} image: {e}")
-            self.status_service.update_image_failed(request_id, image_key, str(e))
-
-        return current_progress + progress_step
-
     def _process_all_images(
         self,
         llm_response: Dict[str, Any],
@@ -224,11 +180,7 @@ class ImageGenerationOrchestrator:
     ) -> ImageGenerationResponse:
         """Create final response"""
         return ImageGenerationResponse(
-            request_id=request_id,
-            status="completed",
-            message=f"Generated images successfully. Archive: {zip_path}",
-            created_at=datetime.utcnow(),
-            request_data=request,
+            request_status=self.status_service.get_job_dict(request_id),
         )
 
     def _handle_failure(self, request_id: str, error: Exception):

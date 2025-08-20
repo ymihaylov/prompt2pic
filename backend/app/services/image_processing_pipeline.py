@@ -11,7 +11,7 @@ from app.services.image_generator_service import ImageGeneratorService
 class ImageTask:
     key: str
     data: Dict[str, Any]
-    filename: str
+    base_filename: str  # Without extension, e.g., 'hero', 'gallery_1'
     message: str
 
 
@@ -35,7 +35,7 @@ class ImageProcessingPipeline:
                     ImageTask(
                         key=key,
                         data=llm_response[key],
-                        filename=f"{key}.png",  # TODO: Why PNG? I don't want to be PNG
+                        base_filename=key,  # Dynamic extension will be determined during download
                         message=f"Generating {key} image...",
                     )
                 )
@@ -47,7 +47,7 @@ class ImageProcessingPipeline:
                     ImageTask(
                         key=f"gallery_{i+1}",
                         data=gallery_data,
-                        filename=f"gallery_{i+1}.png",
+                        base_filename=f"gallery_{i+1}",  # Dynamic extension will be determined during download
                         message=f"Generating gallery image {i+1}...",
                     )
                 )
@@ -64,14 +64,14 @@ class ImageProcessingPipeline:
             image_provider, task.data["prompt"], task.data["aspect"]
         )
 
-        # Download image
-        local_path = self.file_manager.download_single_image(
-            url, request_id, task.filename
+        # Download image with dynamic extension detection
+        local_path, actual_filename = self.file_manager.download_single_image(
+            url, request_id, task.base_filename
         )
 
         return {
             "key": task.key,
             "url": url,
             "local_path": local_path,
-            "filename": task.filename,
+            "filename": actual_filename,  # Now contains the proper extension
         }
