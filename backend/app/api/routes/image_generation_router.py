@@ -7,10 +7,12 @@ from fastapi import APIRouter, HTTPException, Depends
 from app.core.dependencies import (
     get_image_generation_orchestrator,
     get_request_id_service,
+    get_job_status_service,
 )
 from app.models.image_generation import ImageGenerationRequest, ImageGenerationResponse
 from app.services.image_generation_orchestrator import ImageGenerationOrchestrator
 from app.services.request_id_service import RequestIdService
+from app.services.job_status_service import JobStatusService
 
 # Create router instance
 router = APIRouter(
@@ -40,15 +42,16 @@ async def generate_images_sync(
         )
 
 
-@router.get("/job/{job_id}")
+@router.get("/status/{request_id}")
 async def get_job_status(
-    job_id: str,
-    image_generation_orchestrator: ImageGenerationOrchestrator = Depends(
-        get_image_generation_orchestrator
-    ),
+    request_id: str,
+    status_service: JobStatusService = Depends(get_job_status_service),
 ):
+    """Get real-time job status and progress."""
     try:
-        status = image_generation_orchestrator.get_job_status(job_id)
+        status = status_service.get_job_dict(request_id)
+        if "error" in status:
+            raise HTTPException(status_code=404, detail=status["error"])
         return status
     except Exception as e:
-        raise HTTPException(status_code=404, detail=f"Job not found: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"Failed to get status: {str(e)}")
