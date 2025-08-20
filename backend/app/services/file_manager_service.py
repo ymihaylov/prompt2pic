@@ -1,6 +1,5 @@
 import os
 import zipfile
-from typing import List, Dict
 
 import requests
 
@@ -33,38 +32,6 @@ class FileManagerService:
 
         print(f"Downloaded: {filename}")
         return filepath
-
-    def download_images(
-        self, image_urls: List[Dict[str, str]], request_id: str
-    ) -> List[str]:
-        """Download multiple images (legacy method for backward compatibility)."""
-        downloaded_files = []
-
-        for image_data in image_urls:
-            try:
-                url = image_data["url"]
-                filename = image_data["filename"]
-                filepath = self.download_single_image(url, request_id, filename)
-                downloaded_files.append(filepath)
-
-            except Exception as e:
-                print(f"Failed to download {image_data['filename']}: {e}")
-
-        return downloaded_files
-
-    def create_zip_archive(self, file_paths: List[str], request_id: str) -> str:
-        """Create zip archive from downloaded images."""
-        zip_filename = f"generated_images_{request_id}.zip"
-        zip_path = os.path.join(self.base_dir, request_id, zip_filename)
-
-        with zipfile.ZipFile(zip_path, "w") as zipf:
-            for file_path in file_paths:
-                # Add file to zip with just the filename (not full path)
-                arcname = os.path.basename(file_path)
-                zipf.write(file_path, arcname)
-                print(f"Added to zip: {arcname}")
-
-        return zip_path
 
     def create_zip_from_directory(self, request_id: str) -> str:
         """Create zip archive from all images in request directory."""
