@@ -1,3 +1,4 @@
+import time
 from typing import Dict, Any
 
 from app.core.factories import LLMProviderFactory, ImageProviderFactory
@@ -125,6 +126,7 @@ class ImageGenerationOrchestrator:
         current_index: int,
         total_images: int,
     ):
+        time.sleep(4)
         try:
             progress = self.progress_calculator.calculate_image_progress(
                 current_index, total_images
