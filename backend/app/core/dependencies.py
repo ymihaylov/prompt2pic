@@ -2,57 +2,58 @@ from functools import lru_cache
 
 from fastapi import Depends
 
+from app.core.config import settings
 from app.core.factories import LLMProviderFactory, ImageProviderFactory
 from app.core.prompt_config import ProviderConfig
 from app.services.file_manager_service import FileManagerService
 from app.services.image_generation_orchestrator import ImageGenerationOrchestrator
 from app.services.image_generator_service import ImageGeneratorService
 from app.services.image_processing_pipeline import ImageProcessingPipeline
+from app.services.job_id_service import JobIdService
 from app.services.job_status_service import JobStatusService
 from app.services.progress_calculator import ProgressCalculator
 from app.services.prompt_template_service import PromptTemplateService
-from app.services.job_id_service import JobIdService
+from app.services.redis_service import RedisService
 
 
 @lru_cache()
 def get_provider_config() -> ProviderConfig:
-    """Get provider configuration - can be overridden for testing."""
     return ProviderConfig()
 
 
+@lru_cache()
+def get_redis_service() -> RedisService:
+    return RedisService(settings.redis_url)
+
+
 def get_prompt_template_service() -> PromptTemplateService:
-    """Create prompt template service instance."""
     return PromptTemplateService()
 
 
 def get_llm_factory() -> LLMProviderFactory:
-    """Get LLM provider factory."""
     return LLMProviderFactory()
 
 
 def get_image_factory() -> ImageProviderFactory:
-    """Get image provider factory."""
     return ImageProviderFactory()
 
 
 def get_file_manager() -> FileManagerService:
-    """Create file manager service instance."""
     return FileManagerService()
 
 
 def get_job_id_service() -> JobIdService:
-    """Create job ID service instance."""
     return JobIdService()
 
 
 @lru_cache()
-def get_job_status_service() -> JobStatusService:
-    """Get shared job status service instance (singleton)."""
-    return JobStatusService()
+def get_job_status_service(
+    redis_service: RedisService = Depends(get_redis_service),
+) -> JobStatusService:
+    return JobStatusService(redis_service)
 
 
 def get_image_generator() -> ImageGeneratorService:
-    """Create image generator service instance."""
     return ImageGeneratorService()
 
 

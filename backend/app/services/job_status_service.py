@@ -1,11 +1,14 @@
 """
-Simple job status tracking service.
+Redis-based job status tracking service.
 """
 
-from dataclasses import dataclass, field
+import json
+from dataclasses import dataclass, field, asdict
 from datetime import datetime
 from enum import Enum
 from typing import Dict, Optional, List
+
+from app.services.redis_service import RedisService
 
 
 class JobStatus(Enum):
@@ -61,28 +64,84 @@ class JobInfo:
         if self.updated_at is None:
             self.updated_at = datetime.utcnow()
 
+    def to_json(self) -> str:
+        data = asdict(self)
+        data["status"] = self.status.value
+        # Convert datetime objects to ISO format strings
+        if data.get("created_at"):
+            data["created_at"] = data["created_at"].isoformat()
+        if data.get("updated_at"):
+            data["updated_at"] = data["updated_at"].isoformat()
+
+        # Convert ImageInfo datetime fields and status enum
+        for image_key, image_data in data.get("images", {}).items():
+            if image_data.get("generated_at"):
+                image_data["generated_at"] = image_data["generated_at"].isoformat()
+            if image_data.get("downloaded_at"):
+                image_data["downloaded_at"] = image_data["downloaded_at"].isoformat()
+            if image_data.get("status"):
+                image_data["status"] = image_data["status"].value
+
+        return json.dumps(data)
+
+    @classmethod
+    def from_json(cls, json_str: str) -> "JobInfo":
+        data = json.loads(json_str)
+        data["status"] = JobStatus(data["status"])
+
+        # Convert ISO format strings back to datetime objects
+        if data.get("created_at"):
+            data["created_at"] = datetime.fromisoformat(data["created_at"])
+        if data.get("updated_at"):
+            data["updated_at"] = datetime.fromisoformat(data["updated_at"])
+
+        # Convert ImageInfo objects back
+        if data.get("images"):
+            images = {}
+            for image_key, image_data in data["images"].items():
+                if image_data.get("generated_at"):
+                    image_data["generated_at"] = datetime.fromisoformat(
+                        image_data["generated_at"]
+                    )
+                if image_data.get("downloaded_at"):
+                    image_data["downloaded_at"] = datetime.fromisoformat(
+                        image_data["downloaded_at"]
+                    )
+                if image_data.get("status"):
+                    image_data["status"] = ImageStatus(image_data["status"])
+                images[image_key] = ImageInfo(**image_data)
+            data["images"] = images
+
+        return cls(**data)
+
 
 class JobStatusService:
-    """Simple in-memory job status tracking."""
+    def __init__(self, redis_service: RedisService):
+        self.redis_client = redis_service.get_client()
+        self.job_prefix = "job:"
+        self.job_ttl = 86400  # 24 hours
 
-    def __init__(self):
-        self._jobs: Dict[str, JobInfo] = {}
+    def create_job(self, job_id: str) -> JobInfo:
+        # Check if the job with this id already exists and throw exception
+        if self.redis_client.exists(f"{self.job_prefix}{job_id}"):
+            raise ValueError(f"Job with ID {job_id} already exists")
 
-    def create_job(self, job_id: str, llm_response: Dict = None) -> JobInfo:
-        """Create new job with INIT status and setup image placeholders."""
-        # TODO: Check if the job with this id already exists and throw exception
-        job = JobInfo(
-            job_id=job_id, status=JobStatus.INIT, message="Job created"
+        job = JobInfo(job_id=job_id, status=JobStatus.INIT, message="Job created")
+
+        self.redis_client.setex(
+            f"{self.job_prefix}{job_id}",
+            self.job_ttl,
+            job.to_json(),
         )
 
-        self._jobs[job_id] = job
         return job
 
     def fill_images_data(self, job_id: str, llm_response: Dict[str, ImageInfo]):
-        job = self._jobs[job_id]
+        job_data = self.redis_client.get(f"{self.job_prefix}{job_id}")
+        if not job_data:
+            raise ValueError(f"Job with ID {job_id} not found")
 
-        if not job:
-            return False
+        job = JobInfo.from_json(job_data.decode())
 
         if llm_response:
             if "hero" in llm_response:
@@ -91,7 +150,7 @@ class JobStatusService:
                     type="hero",
                     prompt=hero_data.get("prompt"),
                     aspect_ratio=hero_data.get("aspect"),
-                    filename="hero",  # Extension will be set dynamically during download
+                    filename="hero",
                 )
 
             if "about" in llm_response:
@@ -100,7 +159,7 @@ class JobStatusService:
                     type="about",
                     prompt=about_data.get("prompt"),
                     aspect_ratio=about_data.get("aspect"),
-                    filename="about",  # Extension will be set dynamically during download
+                    filename="about",
                 )
 
             if "gallery" in llm_response:
@@ -110,8 +169,14 @@ class JobStatusService:
                         type=key,
                         prompt=gallery_item.get("prompt"),
                         aspect_ratio=gallery_item.get("aspect"),
-                        filename=f"gallery_{i+1}",  # Extension will be set dynamically during download
+                        filename=f"gallery_{i+1}",
                     )
+
+        self.redis_client.setex(
+            f"{self.job_prefix}{job_id}",
+            self.job_ttl,
+            job.to_json(),
+        )
 
     def update_status(
         self,
@@ -120,10 +185,11 @@ class JobStatusService:
         message: str = "",
         progress: int = None,
     ):
-        """Update job status."""
-        job = self._jobs.get(job_id)
-        if not job:
-            return False  # TODO: Throw an error
+        job_data = self.redis_client.get(f"{self.job_prefix}{job_id}")
+        if not job_data:
+            raise ValueError(f"Job with ID {job_id} not found")
+
+        job = JobInfo.from_json(job_data.decode())
 
         job.status = status
         job.message = message
@@ -133,17 +199,33 @@ class JobStatusService:
 
         job.updated_at = datetime.utcnow()
 
+        self.redis_client.setex(
+            f"{self.job_prefix}{job_id}",
+            self.job_ttl,
+            job.to_json(),
+        )
+
         return True
 
     def update_image_generating(self, job_id: str, image_key: str):
         """Mark image as generating."""
-        job = self._jobs.get(job_id)
+        job_data = self.redis_client.get(f"{self.job_prefix}{job_id}")
+        if not job_data:
+            raise ValueError(f"Job with ID {job_id} not found")
+
+        job = JobInfo.from_json(job_data.decode())
 
         if job and image_key in job.images:
             image = job.images[image_key]
             image.status = ImageStatus.GENERATING
             image.generated_at = datetime.utcnow()
             job.updated_at = datetime.utcnow()
+
+            self.redis_client.setex(
+                f"{self.job_prefix}{job_id}",
+                self.job_ttl,
+                job.to_json(),
+            )
 
             return True
 
@@ -152,7 +234,11 @@ class JobStatusService:
     def update_image_completed(
         self, job_id: str, image_key: str, url: str, local_path: str
     ):
-        job = self._jobs.get(job_id)
+        job_data = self.redis_client.get(f"{self.job_prefix}{job_id}")
+        if not job_data:
+            raise ValueError(f"Job with ID {job_id} not found")
+
+        job = JobInfo.from_json(job_data.decode())
 
         if job and image_key in job.images:
             image = job.images[image_key]
@@ -161,13 +247,23 @@ class JobStatusService:
             image.local_path = local_path
             image.downloaded_at = datetime.utcnow()
             job.updated_at = datetime.utcnow()
-            print(f"[{job_id}] Image {image_key}: completed - {url}")
+
+            self.redis_client.setex(
+                f"{self.job_prefix}{job_id}",
+                self.job_ttl,
+                job.to_json(),
+            )
+
             return True
 
         return False
 
     def update_image_failed(self, job_id: str, image_key: str, error: str):
-        job = self._jobs.get(job_id)
+        job_data = self.redis_client.get(f"{self.job_prefix}{job_id}")
+        if not job_data:
+            raise ValueError(f"Job with ID {job_id} not found")
+
+        job = JobInfo.from_json(job_data.decode())
 
         if job and image_key in job.images:
             image = job.images[image_key]
@@ -175,12 +271,22 @@ class JobStatusService:
             image.error = error
             job.updated_at = datetime.utcnow()
 
+            self.redis_client.setex(
+                f"{self.job_prefix}{job_id}",
+                self.job_ttl,
+                job.to_json(),
+            )
+
             return True
 
         return False
 
     def complete_job(self, job_id: str, zip_path: str = None):
-        job = self._jobs.get(job_id)
+        job_data = self.redis_client.get(f"{self.job_prefix}{job_id}")
+        if not job_data:
+            raise ValueError(f"Job with ID {job_id} not found")
+
+        job = JobInfo.from_json(job_data.decode())
 
         if job:
             job.status = JobStatus.COMPLETED
@@ -188,8 +294,18 @@ class JobStatusService:
             job.message = "All images generated and archived"
             job.updated_at = datetime.utcnow()
 
+            self.redis_client.setex(
+                f"{self.job_prefix}{job_id}",
+                self.job_ttl,
+                job.to_json(),
+            )
+
     def fail_job(self, job_id: str, error: str):
-        job = self._jobs.get(job_id)
+        job_data = self.redis_client.get(f"{self.job_prefix}{job_id}")
+        if not job_data:
+            raise ValueError(f"Job with ID {job_id} not found")
+
+        job = JobInfo.from_json(job_data.decode())
 
         if job:
             job.status = JobStatus.FAILED
@@ -197,11 +313,18 @@ class JobStatusService:
             job.message = f"Failed: {error}"
             job.updated_at = datetime.utcnow()
 
-    def get_job(self, job_id: str) -> Optional[JobInfo]:
-        return self._jobs.get(job_id)
+            self.redis_client.setex(
+                f"{self.job_prefix}{job_id}",
+                self.job_ttl,
+                job.to_json(),
+            )
 
     def get_job_dict(self, job_id: str) -> Dict:
-        job = self._jobs.get(job_id)
+        job_data = self.redis_client.get(f"{self.job_prefix}{job_id}")
+        if not job_data:
+            raise ValueError(f"Job with ID {job_id} not found")
+
+        job = JobInfo.from_json(job_data.decode())
 
         if not job:
             return {"error": "Job not found"}
@@ -253,10 +376,21 @@ class JobStatusService:
 
     def get_completed_images(self, job_id: str) -> List[ImageInfo]:
         """Get all completed images for display."""
-        job = self._jobs.get(job_id)
+        job_data = self.redis_client.get(f"{self.job_prefix}{job_id}")
+        if not job_data:
+            raise ValueError(f"Job with ID {job_id} not found")
+
+        job = JobInfo.from_json(job_data.decode())
         if not job:
             return []
 
         return [
             img for img in job.images.values() if img.status == ImageStatus.COMPLETED
         ]
+
+    def health_check(self) -> bool:
+        """Check if Redis is accessible"""
+        try:
+            return self.redis_client.ping()
+        except:
+            return False

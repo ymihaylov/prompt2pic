@@ -2,7 +2,6 @@
 Business logic for image generation.
 """
 
-import time
 from typing import Dict, Any
 
 from app.core.factories import LLMProviderFactory, ImageProviderFactory
@@ -92,7 +91,6 @@ class ImageGenerationOrchestrator:
                 "gallery_count": request.gallery_count,
             },
         )
-        time.sleep(10)
         llm_response = llm_provider.generate_prompts(populated_prompt)
 
         # Update job with full details
@@ -119,7 +117,6 @@ class ImageGenerationOrchestrator:
         )
 
         for i, task in enumerate(image_tasks):
-            time.sleep(6)
             self._process_single_image_with_status(
                 task, image_provider, job_id, i, len(image_tasks)
             )
@@ -165,7 +162,6 @@ class ImageGenerationOrchestrator:
         self.status_service.update_status(
             job_id, JobStatus.CREATING_ZIP, "Creating archive...", progress
         )
-        time.sleep(6)
         return self.file_manager.create_zip_from_directory(job_id)
 
     def _complete_job(self, job_id: str, zip_path: str):
