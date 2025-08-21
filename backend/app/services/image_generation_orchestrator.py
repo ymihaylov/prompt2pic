@@ -1,7 +1,3 @@
-"""
-Business logic for image generation.
-"""
-
 from typing import Dict, Any
 
 from app.core.factories import LLMProviderFactory, ImageProviderFactory

@@ -2,7 +2,7 @@
 Image generation API routes.
 """
 
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException, Depends, BackgroundTasks
 
 from app.core.dependencies import (
     get_image_generation_orchestrator,
@@ -18,6 +18,23 @@ router = APIRouter(
     tags=["images"],
     responses={404: {"description": "Not found"}},
 )
+
+
+@router.post("/generate/async/background-tasks")
+async def generate_images_async(
+    request: ImageGenerationRequest,
+    background_tasks: BackgroundTasks,
+    image_generation_orchestrator: ImageGenerationOrchestrator = Depends(
+        get_image_generation_orchestrator
+    ),
+    job_id_service: JobIdService = Depends(get_job_id_service),
+):
+    job_id = job_id_service.generate()
+    background_tasks.add_task(
+        image_generation_orchestrator.generate_images, request, job_id
+    )
+
+    return {"job_id": job_id, "status": "processing"}
 
 
 @router.post("/generate/sync", response_model=ImageGenerationResponse)
