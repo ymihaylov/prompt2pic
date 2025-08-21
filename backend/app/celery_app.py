@@ -1,20 +1,24 @@
+"""
+Celery application configuration following industry best practices
+"""
 from celery import Celery
-from app.worker.config import REDIS_URL
+from celery.signals import worker_process_init
 
-# Create Celery app
-celery_app = Celery(
-    "prompt2pic",
-    broker=REDIS_URL,
-    backend=REDIS_URL,
-)
+from app.worker.config import CELERY_CONFIG
+from app.worker.logging_config import setup_worker_logging, LOG_LEVEL, LOG_FILE
 
-# Configure Celery
-celery_app.conf.update(
-    task_serializer='json',
-    accept_content=['json'],
-    result_serializer='json',
-    timezone='UTC',
-    enable_utc=True,
-    # Auto-discover tasks in worker module
-    include=['app.worker.tasks']
-)
+# Create Celery app with proper naming
+celery_app = Celery("prompt2pic-workers")
+
+# Apply configuration
+celery_app.conf.update(CELERY_CONFIG)
+
+# Auto-discover tasks in worker module
+celery_app.autodiscover_tasks(["app.worker"])
+
+
+@worker_process_init.connect
+def init_worker(**kwargs):
+    """Initialize worker process with logging and other setup"""
+    setup_worker_logging(LOG_LEVEL, LOG_FILE)
+    # Add any other worker initialization here
