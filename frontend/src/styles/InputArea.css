@@ -1,0 +1,260 @@
+.input-area {
+  background-color: #363737;
+  border-top: 1px solid #4a5568;
+  padding: 20px;
+  position: sticky;
+  bottom: 0;
+  z-index: 100;
+}
+
+.input-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Business Description Input */
+.business-description-section {
+  width: 100%;
+}
+
+.business-description-input {
+  width: 100%;
+  min-height: 60px;
+  max-height: 150px;
+  background-color: #212121;
+  border: 2px solid #4a5568;
+  border-radius: 12px;
+  padding: 16px;
+  color: white;
+  font-size: 16px;
+  line-height: 1.5;
+  resize: none;
+  font-family: inherit;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  outline: none;
+  box-sizing: border-box;
+}
+
+.business-description-input::placeholder {
+  color: #888;
+}
+
+.business-description-input:focus {
+  border-color: #a6adff;
+  box-shadow: 0 0 0 3px rgba(166, 173, 255, 0.1);
+}
+
+.business-description-input.error {
+  border-color: #e53e3e;
+}
+
+.input-error {
+  color: #e53e3e;
+  font-size: 14px;
+  margin-top: 8px;
+  font-weight: 500;
+}
+
+.input-hint {
+  color: #888;
+  font-size: 12px;
+  margin-top: 8px;
+  text-align: center;
+}
+
+/* Controls Section */
+.controls-section {
+  display: flex;
+  gap: 20px;
+  align-items: flex-end;
+}
+
+/* Model Selectors */
+.model-selectors {
+  flex: 1;
+  display: flex;
+  gap: 16px;
+}
+
+.selector-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 120px;
+}
+
+.selector-label {
+  color: #a0a0a0;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.model-selector {
+  background-color: #212121;
+  border: 2px solid #4a5568;
+  border-radius: 8px;
+  padding: 8px 25px 8px 10px;
+  color: white;
+  font-size: 13px;
+  cursor: pointer;
+  transition: border-color 0.2s ease;
+  outline: none;
+  height: 36px;
+  width: 150px;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%23a0a0a0' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-position: right 8px center;
+  background-repeat: no-repeat;
+  background-size: 16px;
+}
+
+.model-selector:focus {
+  border-color: #a6adff;
+}
+
+.model-selector:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Generate Button */
+.generate-button-container {
+  display: flex;
+  align-items: flex-end;
+}
+
+.generate-button {
+  background-color: #a6adff;
+  color: #212121;
+  border: none;
+  border-radius: 2rem;
+  padding: 12px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  text-transform: uppercase;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  height: 44px;
+  min-width: 150px;
+  justify-content: center;
+  outline: none;
+}
+
+.generate-button:hover:not(:disabled) {
+  background-color: #9299f7;
+  transform: scale(1.05);
+}
+
+.generate-button:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+.generate-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+.button-spinner {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(33, 33, 33, 0.3);
+  border-top: 2px solid #212121;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .input-area {
+    padding: 15px;
+  }
+  
+  .controls-section {
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+  }
+  
+  .model-selectors {
+    flex-direction: column;
+    gap: 12px;
+  }
+  
+  .generate-button {
+    width: 100%;
+    padding: 12px 20px;
+    height: 42px;
+    min-width: auto;
+  }
+  
+  .business-description-input {
+    font-size: 16px; /* Prevent zoom on iOS */
+  }
+}
+
+@media (max-width: 480px) {
+  .input-area {
+    padding: 12px;
+  }
+  
+  .input-container {
+    gap: 12px;
+  }
+  
+  .model-selectors {
+    gap: 10px;
+  }
+  
+  .selector-label {
+    font-size: 13px;
+  }
+  
+  .model-selector {
+    padding: 8px 22px 8px 8px;
+    font-size: 12px;
+    height: 34px;
+    width: 110px;
+    background-position: right 6px center;
+    background-size: 14px;
+  }
+  
+  .generate-button {
+    font-size: 13px;
+    text-transform: uppercase;
+    padding: 10px 16px;
+    height: 40px;
+  }
+  
+  .business-description-input {
+    padding: 12px;
+    font-size: 16px;
+  }
+}
+
+/* Focus management for accessibility */
+.business-description-input:focus,
+.model-selector:focus,
+.generate-button:focus {
+  outline: 2px solid #a6adff;
+  outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .business-description-input,
+  .model-selector {
+    border-width: 3px;
+  }
+  
+  .generate-button {
+    border: 2px solid #212121;
+  }
+}
