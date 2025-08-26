@@ -63,20 +63,23 @@ class ImageTaskPipeline:
     def process_image_task(
         self, task: ImageTask, image_provider: ImageProvider, job_id: str
     ) -> ImageGenerationResult:
-        # Generate image
-        url = image_provider.generate_image(task.data["prompt"], task.data["aspect"])
+        # Generate image bytes
+        image_bytes = image_provider.generate_image(task.data["prompt"], task.data["aspect"])
 
-        # Download image
-        local_path, actual_filename = self.file_storage.download_single_image(
-            url, job_id, task.base_filename
+        # Save bytes to disk
+        local_path, actual_filename = self.file_storage.save_image_bytes(
+            image_bytes, job_id, task.base_filename
         )
 
-        # Save prompt
+        # Build static-file URL served by FastAPI
+        static_url = f"/data/{job_id}/{actual_filename}"
+
+        # Save prompt alongside the image
         self.file_storage.save_prompt(task.data["prompt"], job_id, task.base_filename)
 
         return ImageGenerationResult(
             image_type=task.image_type,
-            url=url,
+            url=static_url,
             local_path=local_path,
             filename=actual_filename,
             prompt=task.data["prompt"],

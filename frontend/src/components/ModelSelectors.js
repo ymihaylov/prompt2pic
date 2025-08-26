@@ -16,7 +16,7 @@ const ModelSelectors = ({
   ];
   const imageOptions = [
     { label: 'Simulation', value: 'simulation' },
-    { label: 'DALL-E 3', value: 'openai' }
+    { label: 'GPT Image 1', value: 'openai' }
   ];
   const galleryOptions = Array.from({ length: 15 }, (_, i) => i + 1);
 

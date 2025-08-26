@@ -17,6 +17,18 @@ class FileStorage:
 
         return job_dir
 
+    def save_image_bytes(
+        self, data: bytes, job_id: str, base_filename: str, extension: str = ".png"
+    ) -> Tuple[str, str]:
+        job_dir = self.setup_job_directory(job_id)
+        actual_filename = f"{base_filename}{extension}"
+        filepath = os.path.join(job_dir, actual_filename)
+
+        with open(filepath, "wb") as f:
+            f.write(data)
+
+        return filepath, actual_filename
+
     def download_single_image(
         self, url: str, job_id: str, base_filename: str
     ) -> Tuple[str, str]:
